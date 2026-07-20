@@ -4,7 +4,7 @@ import json
 
 def load_users(path = "users.json"):
     if Path(path).exists():
-     text=Path(path).read_text()
+      text=Path(path).read_text()
      return json.loads(text)
     else:
             return [{"name":"Ada","role":"admin"},{"name":"Grace","role":"editor"}]
