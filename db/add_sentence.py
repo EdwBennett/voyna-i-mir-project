@@ -3,7 +3,7 @@ from pathlib import Path
 import sys
 
 from sqlmodel import SQLModel, Session
-from db import engine
+from db import engine, init_db
 from models import Voyna_I_Mir
 
 def load_chapter_file(file_path: str) -> None:
@@ -13,7 +13,7 @@ def load_chapter_file(file_path: str) -> None:
     if len(lines) % 5 != 0:
         raise ValueError(f"Expected content lines in groups of 5, got {len(lines)} lines")
 
-    SQLModel.metadata.create_all(engine)
+    init_db()
 
     with Session(engine) as session:
         for i in range(0, len(lines), 5):
@@ -31,4 +31,3 @@ if __name__ == "__main__":
     if len(sys.argv) != 2:
         raise SystemExit("Usage: uv run add_sentence.py <input_file>")
     load_chapter_file(sys.argv[1])
-    
