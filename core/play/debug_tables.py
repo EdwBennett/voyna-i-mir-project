@@ -1,7 +1,7 @@
 from pathlib import Path
 from sqlalchemy import create_engine, inspect
 
-db_path = Path("/home/edbennett/Documents/projects/voyna-i-mir-project/db/voyna_i_mi.sqlite")
+db_path = Path("/home/edbennett/Documents/projects/voyna-i-mir-project/db/voyna_i_mir.sqlite")
 
 print("exists:", db_path.exists())
 print("resolved:", db_path.resolve())
