@@ -1,26 +1,34 @@
 """
 say.py – text-to-speech ru/en using Piper.
-def say(*, lang: str, text: str) -> None:
 """
 
 import argparse
 import subprocess
 import sys
+from dataclasses import dataclass
 from pathlib import Path
 
 HOME = Path.home()
 
-LANGUAGES = {
-    "en": {
-        "piper": HOME / ".local/bin/piper",
-        "model": HOME / ".local/share/piper-voices/en/en_US-amy-medium.onnx",
-        "model_config": HOME / ".local/share/piper-voices/en/en_US-amy-medium.onnx.json",
-    },
-    "ru": {
-        "piper": HOME / ".local/bin/piper",
-        "model": HOME / ".local/share/piper-voices/ru/ru_RU/irina/medium/ru_RU-irina-medium.onnx",
-        "model_config": HOME / ".local/share/piper-voices/ru/ru_RU/irina/medium/ru_RU-irina-medium.onnx.json",
-    },
+
+@dataclass(frozen=True)
+class VoiceSpec:
+    piper: Path
+    model: Path
+    model_config: Path
+
+
+LANGUAGES: dict[str, VoiceSpec] = {
+    "en": VoiceSpec(
+        piper=HOME / ".local/bin/piper",
+        model=HOME / ".local/share/piper-voices/en/en_US-amy-medium.onnx",
+        model_config=HOME / ".local/share/piper-voices/en/en_US-amy-medium.onnx.json",
+    ),
+    "ru": VoiceSpec(
+        piper=HOME / ".local/bin/piper",
+        model=HOME / ".local/share/piper-voices/ru/ru_RU/irina/medium/ru_RU-irina-medium.onnx",
+        model_config=HOME / ".local/share/piper-voices/ru/ru_RU/irina/medium/ru_RU-irina-medium.onnx.json",
+    ),
 }
 
 
@@ -28,7 +36,14 @@ def say(*, lang: str, text: str) -> None:
     spec = validate_paths(lang)
 
     piper_result = subprocess.run(
-        [spec["piper"], "--model", spec["model"], "--config", spec["model_config"], "--output-raw"],
+        [
+            spec.piper,
+            "--model",
+            spec.model,
+            "--config",
+            spec.model_config,
+            "--output-raw",
+        ],
         input=text.encode("utf-8"),
         stdout=subprocess.PIPE,
         check=True,
@@ -55,9 +70,9 @@ def read_text(arg_text: str | None) -> str:
     return text
 
 
-def validate_paths(lang: str) -> dict[str, Path]:
+def validate_paths(lang: str) -> VoiceSpec:
     spec = LANGUAGES[lang]
-    for path_name, path_value in spec.items():
+    for path_name, path_value in spec.__dict__.items():
         if not path_value.exists():
             raise FileNotFoundError(f"Missing {path_name}: {path_value}")
     return spec
@@ -80,3 +95,4 @@ def main(argv: list[str] | None = None) -> None:
 
 if __name__ == "__main__":
     main()
+    
