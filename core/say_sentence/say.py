@@ -1,4 +1,7 @@
-"""say.py – text-to-speech ru/en using Piper."""
+"""
+say.py – text-to-speech ru/en using Piper.
+def say(*, lang: str, text: str) -> None:
+"""
 
 import argparse
 import subprocess
@@ -21,41 +24,11 @@ LANGUAGES = {
 }
 
 
-def build_parser():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--lang", choices=sorted(LANGUAGES.keys()), required=True)
-    parser.add_argument("text", nargs="?", help="Text to speak; if omitted, stdin is used.")
-    return parser
-
-
-def say(args):
-    if isinstance(args, argparse.Namespace):
-        ns = args
-    else:
-        ns = build_parser().parse_args(args)
-
-    text = ns.text
-    if text is None:
-        text = sys.stdin.buffer.read().decode("utf-8")
-
-    if not text.strip():
-        raise ValueError("No input text provided.")
-
-    spec = LANGUAGES[ns.lang]
-    piper = spec["piper"]
-    model = spec["model"]
-    model_config = spec["model_config"]
-
-    for path_name, path_value in {
-        "piper": piper,
-        "model": model,
-        "model_config": model_config,
-    }.items():
-        if not path_value.exists():
-            raise FileNotFoundError(f"Missing {path_name}: {path_value}")
+def say(*, lang: str, text: str) -> None:
+    spec = validate_paths(lang)
 
     piper_result = subprocess.run(
-        [str(piper), "--model", str(model), "--config", str(model_config), "--output-raw"],
+        [spec["piper"], "--model", spec["model"], "--config", spec["model_config"], "--output-raw"],
         input=text.encode("utf-8"),
         stdout=subprocess.PIPE,
         check=True,
@@ -68,15 +41,41 @@ def say(args):
     )
 
 
-def main(argv=None):
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--lang", choices=sorted(LANGUAGES), required=True)
+    parser.add_argument("text", nargs="?", help="Text to speak; if omitted, stdin is used.")
+    return parser
+
+
+def read_text(arg_text: str | None) -> str:
+    text = arg_text if arg_text is not None else sys.stdin.read()
+    if not text.strip():
+        raise ValueError("No input text provided.")
+    return text
+
+
+def validate_paths(lang: str) -> dict[str, Path]:
+    spec = LANGUAGES[lang]
+    for path_name, path_value in spec.items():
+        if not path_value.exists():
+            raise FileNotFoundError(f"Missing {path_name}: {path_value}")
+    return spec
+
+
+def main(argv: list[str] | None = None) -> None:
+    parser = build_parser()
+    ns = parser.parse_args(argv)
+
     try:
-        say(argv)
+        text = read_text(ns.text)
+        say(lang=ns.lang, text=text)
     except ValueError as e:
         print(str(e), file=sys.stderr)
-        sys.exit(1)
+        raise SystemExit(1)
     except FileNotFoundError as e:
         print(str(e), file=sys.stderr)
-        sys.exit(2)
+        raise SystemExit(2)
 
 
 if __name__ == "__main__":
