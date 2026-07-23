@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import dataclasses
 import subprocess
 import sys
 from dataclasses import dataclass
@@ -43,9 +44,15 @@ def get_voice_spec(lang: str) -> VoiceSpec:
 
 def validate_paths(lang: str) -> VoiceSpec:
     spec = get_voice_spec(lang)
-    for name, path in (("Piper binary", PIPER_BIN), ("Model", spec.model), ("Config", spec.model_config)):
+    
+    if not PIPER_BIN.exists():
+        raise FileNotFoundError(f"Piper binary not found at {PIPER_BIN}")
+        
+    for field_name, path in dataclasses.asdict(spec).items():
         if not path.exists():
-            raise FileNotFoundError(f"{name} not found at {path}")
+            display_name = field_name.replace("_", " ").capitalize()
+            raise FileNotFoundError(f"{display_name} not found at {path}")
+            
     return spec
 
 
@@ -71,43 +78,38 @@ def say(*, lang: str, text: str) -> None:
         "raw",
     ]
 
-    with subprocess.Popen(piper_cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE) as piper_proc:
-        with subprocess.Popen(play_cmd, stdin=piper_proc.stdout) as play_proc:
-            assert piper_proc.stdin is not None
-            assert piper_proc.stdout is not None
-            piper_proc.stdin.write(text.encode())
-            piper_proc.stdin.close()
-            piper_proc.stdout.close()
-            play_proc.wait()
-        piper_proc.wait()
-
-
-def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Text-to-speech using Piper")
-    parser.add_argument("text", nargs="?", help="Text to speak; reads stdin when omitted")
-    parser.add_argument("--lang", default="en", choices=sorted(LANGUAGES), help="Language code")
-    return parser.parse_args(argv)
-
-
-def read_text(args: argparse.Namespace) -> str:
-    if args.text is not None:
-        return args.text.strip()
-    if not sys.stdin.isatty():
-        return sys.stdin.read().strip()
-    raise SystemExit("Error: no text provided and no piped input detected.")
-
-
-def main(argv: list[str] | None = None) -> int:
-    args = parse_args(argv)
-    text = read_text(args)
-    if not text:
-        raise SystemExit("Error: text input is empty.")
     try:
-        say(lang=args.lang, text=text)
-    except (FileNotFoundError, ValueError, OSError, subprocess.SubprocessError) as exc:
-        raise SystemExit(f"Error: {exc}") from exc
-    return 0
+        with subprocess.Popen(piper_cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE) as piper_proc:
+            with subprocess.Popen(play_cmd, stdin=piper_proc.stdout) as play_proc:
+                piper_proc.communicate(input=text.encode("utf-8"))
+                play_proc.wait()
+    except Exception as exc:
+        print(f"Error during playback: {exc}", file=sys.stderr)
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    parser = argparse.ArgumentParser(description="Piper TTS script.")
+    parser.add_argument("-l", "--lang", default="en", choices=["en", "ru"], help="Language to use")
+    # nargs="?" makes the argument optional; default=None lets us detect if it's missing
+    parser.add_argument("text", nargs="?", default=None, help="Text to speak (reads from stdin if omitted)")
+    args = parser.parse_args()
+
+    # Determine text source
+    if args.text is not None:
+        text_to_speak = args.text
+    elif not sys.stdin.isatty():
+        # Read from pipe/redirected input and strip trailing whitespace/newlines
+        text_to_speak = sys.stdin.read().strip()
+    else:
+        # User ran the script with no arguments and no pipe
+        parser.error("the following arguments are required: text (or provide text via stdin)")
+
+    if not text_to_speak:
+        print("Warning: Received empty text input. Nothing to speak.", file=sys.stderr)
+        sys.exit(0)
+
+    try:
+        say(lang=args.lang, text=text_to_speak)
+    except Exception as error:
+        print(f"Error: {error}", file=sys.stderr)
+        sys.exit(1)
