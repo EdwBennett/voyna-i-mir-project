@@ -1,31 +1,14 @@
-from typing import Any
+import sys
+from pathlib import Path
 
-from pydantic import model_serializer
-from sqlmodel import SQLModel, Field, Session, create_engine, select
-import json
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(PROJECT_ROOT))
 
+from sqlmodel import Session, create_engine, select
 
-class Voyna_I_Mir(SQLModel, table=True):
-    id: int | None = Field(default=None, primary_key=True)
-    chapter_sequence: int
-    chapter_full_name: str = Field(max_length=50)
-    voyna_i_mir_russian: str = Field(max_length=1000)
-    russian_transliteration: str = Field(max_length=1000)
-    english_translation: str = Field(max_length=1000)
+from db.models import Voyna_I_Mir
 
-    @model_serializer
-    def serialize_model(self) -> dict[str, Any]:
-        return {
-            "id": self.id,
-            "chapter_sequence": self.chapter_sequence,
-            "chapter_full_name": self.chapter_full_name,
-            "voyna_i_mir_russian": self.voyna_i_mir_russian,
-            "russian_transliteration": self.russian_transliteration,
-            "english_translation": self.english_translation,
-        }
-
-
-db_path = "/home/edbennett/Documents/projects/voyna-i-mir-project/db/voyna_i_mir.sqlite"
+db_path = PROJECT_ROOT / "db" / "voyna_i_mir.sqlite"
 engine = create_engine(f"sqlite:///{db_path}")
 
 
