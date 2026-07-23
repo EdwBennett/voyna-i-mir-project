@@ -29,12 +29,16 @@ LANGUAGES: dict[str, VoiceSpec] = {
     ),
 }
 
+def get_voice_spec(lang: str) -> VoiceSpec:
+    match LANGUAGES.get(lang):
+        case VoiceSpec() as spec:
+            return spec
+        case _:
+            sys.exit(f"Error: Unsupported language '{lang}'")
+
 def validate_paths(lang: str) -> VoiceSpec:
     """Validates that the required files exist for the selected language."""
-    if lang not in LANGUAGES:
-        raise ValueError(f"Unsupported language '{lang}'")
-        
-    spec = LANGUAGES[lang]
+    spec = get_voice_spec(lang)
     for name, path in [("Piper binary", spec.piper), ("Model", spec.model), ("Config", spec.model_config)]:
         if not path.exists():
             raise FileNotFoundError(f"{name} not found at {path}")
@@ -56,53 +60,32 @@ def say(*, lang: str, text: str) -> None:
 
     with subprocess.Popen(piper_cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True) as piper_proc:
         with subprocess.Popen(play_cmd, stdin=piper_proc.stdout) as play_proc:
-            if piper_proc.stdout:
-                piper_proc.stdout.close()
-                
-            try:
-                piper_proc.communicate(input=text)
-            except:
-                piper_proc.kill()
-                play_proc.kill()
-                raise
-                
+            if piper_proc.stdin:
+                piper_proc.stdin.write(text)
+                piper_proc.stdin.close()
             play_proc.wait()
-            piper_proc.wait() # Ensure piper fully finishes and registers exit codes
-            
-            # Prioritize evaluating the actual consumer tool failure context
-            if play_proc.returncode != 0:
-                raise subprocess.CalledProcessError(play_proc.returncode, play_cmd)
-            if piper_proc.returncode != 0:
-                raise subprocess.CalledProcessError(piper_proc.returncode, piper_cmd)
+        piper_proc.wait()
 
-def main() -> None:
-    parser = argparse.ArgumentParser(description="Text-to-speech CLI using Piper.")
-    parser.add_argument("text", nargs="*", help="Text to speak. If omitted, reads from stdin.")
-    parser.add_argument("-l", "--lang", choices=LANGUAGES.keys(), default="en", help="Language voice to use.")
-    
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Text-to-speech using Piper")
+    # nargs="?" makes text optional; default=None lets us detect if it was omitted
+    parser.add_argument("text", nargs="?", default=None, help="Text to speak (reads from stdin if omitted)")
+    parser.add_argument("--lang", default="en", choices=["en", "ru"], help="Language code (default: en)")
     args = parser.parse_args()
-    
-    if args.text:
-        input_text = " ".join(args.text).strip()
-    elif not sys.stdin.isatty():
-        input_text = sys.stdin.read().strip()
+
+    # Read from stdin if no text argument is provided
+    if args.text is None:
+        if not sys.stdin.isatty():
+            input_text = sys.stdin.read().strip()
+        else:
+            sys.exit("Error: No text provided and no piped input detected.")
     else:
-        input_text = ""
+        input_text = args.text
 
     if not input_text:
-        parser.error("No input text provided via arguments or stdin pipeline.")
+        sys.exit("Error: Text input is empty.")
 
     try:
         say(lang=args.lang, text=input_text)
-    except (ValueError, FileNotFoundError) as e:
-        print(f"Configuration Error: {e}", file=sys.stderr)
-        sys.exit(1)
-    except subprocess.CalledProcessError as e:
-        print(f"Audio Pipeline Error: Command '{e.cmd}' failed with exit code {e.returncode}.", file=sys.stderr)
-        sys.exit(2)
-    except KeyboardInterrupt:
-        print("\nPlayback interrupted by user.", file=sys.stderr)
-        sys.exit(130)
-
-if __name__ == "__main__":
-    main()
+    except Exception as e:
+        sys.exit(f"Error: {e}")
