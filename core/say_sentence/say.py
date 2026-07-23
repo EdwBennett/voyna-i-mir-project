@@ -1,4 +1,5 @@
-#!/usr/bin/env python3
+"""say.py – text-to-speech ru/en using Piper."""
+
 import argparse
 import subprocess
 import sys
@@ -80,4 +81,3 @@ def main(argv=None):
 
 if __name__ == "__main__":
     main()
-    
