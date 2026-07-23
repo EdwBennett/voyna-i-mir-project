@@ -6,21 +6,21 @@ import sys
 from pathlib import Path
 
 HOME = Path.home()
-CONFIG_PATH = Path(os.environ.get("SAY_RU_CONFIG", HOME / ".config" / "say_ru.ini"))
+CONFIG_PATH = Path(os.environ.get("SAY_EN_CONFIG", HOME / ".config" / "say_en.ini"))
 
 DEFAULT_PIPER = HOME / ".local/bin/piper"
-DEFAULT_MODEL = HOME / ".local/share/piper-voices/ru/ru_RU/irina/medium/ru_RU-irina-medium.onnx"
-DEFAULT_MODEL_CONFIG = HOME / ".local/share/piper-voices/ru/ru_RU/irina/medium/ru_RU-irina-medium.onnx.json"
+DEFAULT_MODEL = HOME / ".local/share/piper-voices/en/en_US-amy-medium.onnx"
+DEFAULT_MODEL_CONFIG = HOME / ".local/share/piper-voices/en/en_US-amy-medium.onnx.json"
 
 parser = configparser.ConfigParser()
 parser.read(CONFIG_PATH)
 
-section = parser["say_ru"] if parser.has_section("say_ru") else {}
+section = parser["say_en"] if parser.has_section("say_en") else {}
 
-PIPER = Path(os.environ.get("SAY_RU_PIPER", section.get("piper", str(DEFAULT_PIPER))))
-MODEL = Path(os.environ.get("SAY_RU_MODEL", section.get("model", str(DEFAULT_MODEL))))
+PIPER = Path(os.environ.get("SAY_EN_PIPER", section.get("piper", str(DEFAULT_PIPER))))
+MODEL = Path(os.environ.get("SAY_EN_MODEL", section.get("model", str(DEFAULT_MODEL))))
 MODEL_CONFIG = Path(
-    os.environ.get("SAY_RU_MODEL_CONFIG", section.get("model_config", str(DEFAULT_MODEL_CONFIG)))
+    os.environ.get("SAY_EN_MODEL_CONFIG", section.get("model_config", str(DEFAULT_MODEL_CONFIG)))
 )
 
 
