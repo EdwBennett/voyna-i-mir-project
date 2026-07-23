@@ -59,11 +59,11 @@ def validate_paths(lang: str) -> VoiceSpec:
 def say(*, lang: str, text: str) -> None:
     spec = validate_paths(lang)
     piper_cmd = [
-        str(PIPER_BIN),
+        PIPER_BIN,
         "--model",
-        str(spec.model),
+        spec.model,
         "--config",
-        str(spec.model_config),
+        spec.model_config,
         "--output_raw",
     ]
     play_cmd = [
