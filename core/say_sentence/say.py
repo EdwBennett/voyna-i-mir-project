@@ -32,67 +32,74 @@ LANGUAGES: dict[str, VoiceSpec] = {
 }
 
 
+def validate_paths(lang: str) -> VoiceSpec:
+    """Validates that the required files exist for the selected language."""
+    if lang not in LANGUAGES:
+        print(f"Error: Unsupported language '{lang}'", file=sys.stderr)
+        sys.exit(1)
+        
+    spec = LANGUAGES[lang]
+    for path_name, path in [("Piper binary", spec.piper), ("Model", spec.model), ("Config", spec.model_config)]:
+        if not path.exists():
+            print(f"Error: {path_name} not found at {path}", file=sys.stderr)
+            sys.exit(1)
+    return spec
+
+
 def say(*, lang: str, text: str) -> None:
     spec = validate_paths(lang)
 
+    # Convert text to bytes inline so stdout remains raw binary data.
     piper_result = subprocess.run(
         [
-            spec.piper,
+            str(spec.piper),
             "--model",
-            spec.model,
+            str(spec.model),
             "--config",
-            spec.model_config,
+            str(spec.model_config),
             "--output-raw",
         ],
-        input=text.encode("utf-8"),
-        stdout=subprocess.PIPE,
+        input=bytes(text, "utf-8"),
+        capture_output=True,
         check=True,
     )
 
+    # Play the raw PCM bytes directly from RAM
     subprocess.run(
-        ["paplay", "--raw", "--channels=1", "--rate=22050", "--format=s16le"],
+        ["paplay", "--channels=1", "--rate=22050", "--format=s16le", "--raw"],
         input=piper_result.stdout,
         check=True,
     )
 
 
-def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--lang", choices=sorted(LANGUAGES), required=True)
-    parser.add_argument("text", nargs="?", help="Text to speak; if omitted, stdin is used.")
-    return parser
-
-
-def read_text(arg_text: str | None) -> str:
-    text = arg_text if arg_text is not None else sys.stdin.read()
-    if not text.strip():
-        raise ValueError("No input text provided.")
-    return text
-
-
-def validate_paths(lang: str) -> VoiceSpec:
-    spec = LANGUAGES[lang]
-    for path_name, path_value in spec.__dict__.items():
-        if not path_value.exists():
-            raise FileNotFoundError(f"Missing {path_name}: {path_value}")
-    return spec
-
-
-def main(argv: list[str] | None = None) -> None:
-    parser = build_parser()
-    ns = parser.parse_args(argv)
-
-    try:
-        text = read_text(ns.text)
-        say(lang=ns.lang, text=text)
-    except ValueError as e:
-        print(str(e), file=sys.stderr)
-        raise SystemExit(1)
-    except FileNotFoundError as e:
-        print(str(e), file=sys.stderr)
-        raise SystemExit(2)
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Text-to-speech using Piper and PulseAudio.")
+    parser.add_argument(
+        "--lang", 
+        choices=list(LANGUAGES.keys()), 
+        default="en", 
+        help="Language voice to use (default: en)"
+    )
+    parser.add_argument(
+        "text", 
+        nargs="?", 
+        help="Text to speak. If omitted, text will be read from stdin."
+    )
+    
+    args = parser.parse_args()
+    
+    # Read text from argument or fall back to stdin reading
+    if args.text:
+        input_text = args.text
+    else:
+        input_text = sys.stdin.read().strip()
+        
+    if not input_text:
+        print("Error: No input text provided.", file=sys.stderr)
+        sys.exit(1)
+        
+    say(lang=args.lang, text=input_text)
 
 
 if __name__ == "__main__":
     main()
-    
