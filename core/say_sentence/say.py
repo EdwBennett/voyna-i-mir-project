@@ -20,18 +20,27 @@ LANGUAGES = {
 }
 
 
-def main():
-    argp = argparse.ArgumentParser()
-    argp.add_argument("--lang", choices=sorted(LANGUAGES.keys()), required=True)
-    args = argp.parse_args()
+def build_parser():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--lang", choices=sorted(LANGUAGES.keys()), required=True)
+    parser.add_argument("text", nargs="?", help="Text to speak; if omitted, stdin is used.")
+    return parser
 
-    text = sys.stdin.buffer.read().decode("utf-8")
+
+def say(args):
+    if isinstance(args, argparse.Namespace):
+        ns = args
+    else:
+        ns = build_parser().parse_args(args)
+
+    text = ns.text
+    if text is None:
+        text = sys.stdin.buffer.read().decode("utf-8")
 
     if not text.strip():
-        print("No input text provided on stdin.", file=sys.stderr)
-        sys.exit(1)
+        raise ValueError("No input text provided.")
 
-    spec = LANGUAGES[args.lang]
+    spec = LANGUAGES[ns.lang]
     piper = spec["piper"]
     model = spec["model"]
     model_config = spec["model_config"]
@@ -42,8 +51,7 @@ def main():
         "model_config": model_config,
     }.items():
         if not path_value.exists():
-            print(f"Missing {path_name}: {path_value}", file=sys.stderr)
-            sys.exit(2)
+            raise FileNotFoundError(f"Missing {path_name}: {path_value}")
 
     piper_result = subprocess.run(
         [str(piper), "--model", str(model), "--config", str(model_config), "--output-raw"],
@@ -57,6 +65,17 @@ def main():
         input=piper_result.stdout,
         check=True,
     )
+
+
+def main(argv=None):
+    try:
+        say(argv)
+    except ValueError as e:
+        print(str(e), file=sys.stderr)
+        sys.exit(1)
+    except FileNotFoundError as e:
+        print(str(e), file=sys.stderr)
+        sys.exit(2)
 
 
 if __name__ == "__main__":
