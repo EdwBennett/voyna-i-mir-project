@@ -1,91 +1,115 @@
-"""
-say.py – text-to-speech ru/en using Piper.
-"""
+"""Text-to-speech helper using Piper for English and Russian."""
+
+from __future__ import annotations
 
 import argparse
+import dataclasses
 import subprocess
 import sys
 from dataclasses import dataclass
 from pathlib import Path
 
 HOME = Path.home()
+PIPER_BIN = HOME / ".local/bin/piper"
+SAMPLE_RATE = 22050
+LANGUAGES: dict[str, "VoiceSpec"] = {}
 
-@dataclass(frozen=True)
+
+@dataclass(frozen=True, slots=True)
 class VoiceSpec:
-    piper: Path
     model: Path
     model_config: Path
 
-LANGUAGES: dict[str, VoiceSpec] = {
-    "en": VoiceSpec(
-        piper=HOME / ".local/bin/piper",
-        model=HOME / ".local/share/piper-voices/en/en_US-amy-medium.onnx",
-        model_config=HOME / ".local/share/piper-voices/en/en_US-amy-medium.onnx.json",
-    ),
-    "ru": VoiceSpec(
-        piper=HOME / ".local/bin/piper",
-        model=HOME / ".local/share/piper-voices/ru/ru_RU/irina/medium/ru_RU-irina-medium.onnx",
-        model_config=HOME / ".local/share/piper-voices/ru/ru_RU/irina/medium/ru_RU-irina-medium.onnx.json",
-    ),
-}
+
+LANGUAGES.update(
+    {
+        "en": VoiceSpec(
+            model=HOME / ".local/share/piper-voices/en/en_US-amy-medium.onnx",
+            model_config=HOME / ".local/share/piper-voices/en/en_US-amy-medium.onnx.json",
+        ),
+        "ru": VoiceSpec(
+            model=HOME / ".local/share/piper-voices/ru/ru_RU/irina/medium/ru_RU-irina-medium.onnx",
+            model_config=HOME / ".local/share/piper-voices/ru/ru_RU/irina/medium/ru_RU-irina-medium.onnx.json",
+        ),
+    }
+)
+
 
 def get_voice_spec(lang: str) -> VoiceSpec:
-    match LANGUAGES.get(lang):
-        case VoiceSpec() as spec:
-            return spec
-        case _:
-            sys.exit(f"Error: Unsupported language '{lang}'")
+    try:
+        return LANGUAGES[lang]
+    except KeyError as exc:
+        raise ValueError(f"Unsupported language: {lang}") from exc
+
 
 def validate_paths(lang: str) -> VoiceSpec:
-    """Validates that the required files exist for the selected language."""
     spec = get_voice_spec(lang)
-    for name, path in [("Piper binary", spec.piper), ("Model", spec.model), ("Config", spec.model_config)]:
+    
+    if not PIPER_BIN.exists():
+        raise FileNotFoundError(f"Piper binary not found at {PIPER_BIN}")
+        
+    for field_name, path in dataclasses.asdict(spec).items():
         if not path.exists():
-            raise FileNotFoundError(f"{name} not found at {path}")
+            display_name = field_name.replace("_", " ").capitalize()
+            raise FileNotFoundError(f"{display_name} not found at {path}")
+            
     return spec
 
+
 def say(*, lang: str, text: str) -> None:
-    """Pipelines text through Piper and plays it via aplay."""
     spec = validate_paths(lang)
-
     piper_cmd = [
-        str(spec.piper),
-        "--model", str(spec.model),
-        "--config", str(spec.model_config),
-        "--output_raw"
+        PIPER_BIN,
+        "--model",
+        spec.model,
+        "--config",
+        spec.model_config,
+        "--output_raw",
     ]
-    
-    # Using aplay explicitly configured for raw 16-bit Mono Little-Endian PCM at 22050Hz
-    play_cmd = ["aplay", "-c", "1", "-r", "22050", "-f", "S16_LE", "-t", "raw"]
-
-    with subprocess.Popen(piper_cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True) as piper_proc:
-        with subprocess.Popen(play_cmd, stdin=piper_proc.stdout) as play_proc:
-            if piper_proc.stdin:
-                piper_proc.stdin.write(text)
-                piper_proc.stdin.close()
-            play_proc.wait()
-        piper_proc.wait()
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Text-to-speech using Piper")
-    # nargs="?" makes text optional; default=None lets us detect if it was omitted
-    parser.add_argument("text", nargs="?", default=None, help="Text to speak (reads from stdin if omitted)")
-    parser.add_argument("--lang", default="en", choices=["en", "ru"], help="Language code (default: en)")
-    args = parser.parse_args()
-
-    # Read from stdin if no text argument is provided
-    if args.text is None:
-        if not sys.stdin.isatty():
-            input_text = sys.stdin.read().strip()
-        else:
-            sys.exit("Error: No text provided and no piped input detected.")
-    else:
-        input_text = args.text
-
-    if not input_text:
-        sys.exit("Error: Text input is empty.")
+    play_cmd = [
+        "aplay",
+        "-c",
+        "1",
+        "-r",
+        str(SAMPLE_RATE),
+        "-f",
+        "S16_LE",
+        "-t",
+        "raw",
+    ]
 
     try:
-        say(lang=args.lang, text=input_text)
-    except Exception as e:
-        sys.exit(f"Error: {e}")
+        with subprocess.Popen(piper_cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE) as piper_proc:
+            with subprocess.Popen(play_cmd, stdin=piper_proc.stdout) as play_proc:
+                piper_proc.communicate(input=text.encode("utf-8"))
+                play_proc.wait()
+    except Exception as exc:
+        print(f"Error during playback: {exc}", file=sys.stderr)
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Piper TTS script.")
+    parser.add_argument("-l", "--lang", default="en", choices=["en", "ru"], help="Language to use")
+    # nargs="?" makes the argument optional; default=None lets us detect if it's missing
+    parser.add_argument("text", nargs="?", default=None, help="Text to speak (reads from stdin if omitted)")
+    args = parser.parse_args()
+
+    # Determine text source
+    if args.text is not None:
+        text_to_speak = args.text
+    elif not sys.stdin.isatty():
+        # Read from pipe/redirected input and strip trailing whitespace/newlines
+        text_to_speak = sys.stdin.read().strip()
+    else:
+        # User ran the script with no arguments and no pipe
+        parser.error("the following arguments are required: text (or provide text via stdin)")
+
+    if not text_to_speak:
+        print("Warning: Received empty text input. Nothing to speak.", file=sys.stderr)
+        sys.exit(0)
+
+    try:
+        say(lang=args.lang, text=text_to_speak)
+    except Exception as error:
+        print(f"Error: {error}", file=sys.stderr)
+        sys.exit(1)
