@@ -81,7 +81,10 @@ def say(*, lang: str, text: str) -> None:
     try:
         with subprocess.Popen(piper_cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE) as piper_proc:
             with subprocess.Popen(play_cmd, stdin=piper_proc.stdout) as play_proc:
-                piper_proc.communicate(input=text.encode("utf-8"))
+                piper_proc.stdout.close()
+                piper_proc.stdin.write(text.encode("utf-8"))
+                piper_proc.stdin.close()
+                piper_proc.wait()
                 play_proc.wait()
     except Exception as exc:
         print(f"Error during playback: {exc}", file=sys.stderr)
