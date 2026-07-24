@@ -11,7 +11,7 @@ from sqlmodel import Session, create_engine, select
 from db.models import Voyna_I_Mir
 from core.say_sentence.say import say
 
-def play_repeat(*, chapter: int, count: int, delay: int) -> None:
+def play_repeat(*, mode: str, chapter: int, count: int, delay: int) -> None:
 
     db_path = PROJECT_ROOT / "db" / "voyna_i_mir.sqlite"
     engine = create_engine(f"sqlite:///{db_path}")
@@ -40,13 +40,14 @@ def play_repeat(*, chapter: int, count: int, delay: int) -> None:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="play on repeat script.")
+    parser.add_argument("-", "--mode", type=str, default="auto", choices=["auto", "mp3", "wait"], help="Language to use")
     parser.add_argument("-c", "--chapter", type=int, default=1, help="Select Chapter")
     parser.add_argument("-n", "--count", type=int, default=2, help="Select Count")
     parser.add_argument("-d", "--delay", type=int, default=3, help="Select Delay")
     args = parser.parse_args()
 
     try:
-        play_repeat(chapter=args.chapter, count=args.count, delay=args.delay)
+        play_repeat(mode=args.mode, chapter=args.chapter, count=args.count, delay=args.delay)
     except Exception as error:
         print(f"Error: {error}", file=sys.stderr)
         sys.exit(1)
