@@ -21,6 +21,7 @@ def render_mp3(*, record: Voyna_I_Mir, count: int, delay: int, output_path: Path
     for _ in range(count):
         chunks.append(synthesize(lang="ru", text=record.voyna_i_mir_russian))
         chunks.append(silence_delay)
+        chunks.append(synthesize(lang="en", text=record.english_translation))
         chunks.append(silence_pause)
     raw_audio = b"".join(chunks)
 
@@ -67,6 +68,7 @@ def play_repeat(*, mode: str, chapter: int, count: int, delay: int) -> None:
         say(lang="ru", text=record.voyna_i_mir_russian)
         time.sleep(delay)
         print(record.english_translation, flush=True, end="\n\n")
+        say(lang="en", text=record.english_translation)
         time.sleep(3)
 
 
