@@ -7,9 +7,9 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT))
 
 from sqlmodel import Session, create_engine, select
-
 from db.models import Voyna_I_Mir
 from core.say_sentence.say import say
+
 
 def play_repeat(*, mode: str, chapter: int, count: int, delay: int) -> None:
 
@@ -40,7 +40,7 @@ def play_repeat(*, mode: str, chapter: int, count: int, delay: int) -> None:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="play on repeat script.")
-    parser.add_argument("-", "--mode", type=str, default="auto", choices=["auto", "mp3", "wait"], help="Language to use")
+    parser.add_argument("-", "--mode", type=str, default="play", choices=["play", "mp3"], help="Mode")
     parser.add_argument("-c", "--chapter", type=int, default=1, help="Select Chapter")
     parser.add_argument("-n", "--count", type=int, default=2, help="Select Count")
     parser.add_argument("-d", "--delay", type=int, default=3, help="Select Delay")
