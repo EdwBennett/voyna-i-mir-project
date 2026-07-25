@@ -8,3 +8,4 @@ class Voyna_I_Mir(SQLModel, table=True):
     voyna_i_mir_russian: str = Field(max_length=1000)
     russian_transliteration: str = Field(max_length=1000)
     english_translation: str = Field(max_length=1000)
+    english_clauses: str = Field(max_length=1000)
