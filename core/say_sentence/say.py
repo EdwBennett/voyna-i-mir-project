@@ -56,7 +56,8 @@ def validate_paths(lang: str) -> VoiceSpec:
     return spec
 
 
-def say(*, lang: str, text: str) -> None:
+def synthesize(*, lang: str, text: str) -> bytes:
+    """Render text to raw S16_LE mono PCM audio at SAMPLE_RATE, without playing it."""
     spec = validate_paths(lang)
     piper_cmd = [
         PIPER_BIN,
@@ -66,6 +67,16 @@ def say(*, lang: str, text: str) -> None:
         spec.model_config,
         "--output_raw",
     ]
+    result = subprocess.run(
+        piper_cmd,
+        input=text.encode("utf-8"),
+        stdout=subprocess.PIPE,
+        check=True,
+    )
+    return result.stdout
+
+
+def say(*, lang: str, text: str) -> None:
     play_cmd = [
         "aplay",
         "-c",
@@ -79,13 +90,8 @@ def say(*, lang: str, text: str) -> None:
     ]
 
     try:
-        with subprocess.Popen(piper_cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE) as piper_proc:
-            with subprocess.Popen(play_cmd, stdin=piper_proc.stdout) as play_proc:
-                piper_proc.stdout.close()
-                piper_proc.stdin.write(text.encode("utf-8"))
-                piper_proc.stdin.close()
-                piper_proc.wait()
-                play_proc.wait()
+        audio = synthesize(lang=lang, text=text)
+        subprocess.run(play_cmd, input=audio, check=True)
     except Exception as exc:
         print(f"Error during playback: {exc}", file=sys.stderr)
 

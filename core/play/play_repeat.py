@@ -1,4 +1,5 @@
 import argparse
+import subprocess
 import sys
 import time
 from pathlib import Path
@@ -8,7 +9,32 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 from sqlmodel import Session, create_engine, select
 from db.models import Voyna_I_Mir
-from core.say_sentence.say import say
+from core.say_sentence.say import SAMPLE_RATE, say, synthesize
+
+
+def render_mp3(*, record: Voyna_I_Mir, count: int, delay: int, output_path: Path) -> None:
+    bytes_per_second = SAMPLE_RATE * 2  # 16-bit mono PCM
+    silence_delay = b"\x00" * (bytes_per_second * delay)
+    silence_pause = b"\x00" * (bytes_per_second * 3)
+
+    chunks = []
+    for _ in range(count):
+        chunks.append(synthesize(lang="ru", text=record.voyna_i_mir_russian))
+        chunks.append(silence_delay)
+        chunks.append(silence_pause)
+    raw_audio = b"".join(chunks)
+
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    ffmpeg_cmd = [
+        "ffmpeg",
+        "-y",
+        "-f", "s16le",
+        "-ar", str(SAMPLE_RATE),
+        "-ac", "1",
+        "-i", "-",
+        str(output_path),
+    ]
+    subprocess.run(ffmpeg_cmd, input=raw_audio, check=True)
 
 
 def play_repeat(*, mode: str, chapter: int, count: int, delay: int) -> None:
@@ -28,6 +54,12 @@ def play_repeat(*, mode: str, chapter: int, count: int, delay: int) -> None:
         print("No record found")
         return
 
+    if mode == "mp3":
+        output_path = PROJECT_ROOT / "output" / f"chapter_{chapter}_repeat.mp3"
+        render_mp3(record=record, count=count, delay=delay, output_path=output_path)
+        print(f"Saved {output_path}")
+        return
+
     for repetition in range(count):
         print()
         print(record.voyna_i_mir_russian, flush=True, end="\n\n")
@@ -40,7 +72,7 @@ def play_repeat(*, mode: str, chapter: int, count: int, delay: int) -> None:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="play on repeat script.")
-    parser.add_argument("-", "--mode", type=str, default="play", choices=["play", "mp3"], help="Mode")
+    parser.add_argument("-", "--mode", type=str, default="live", choices=["live", "mp3"], help="Mode")
     parser.add_argument("-c", "--chapter", type=int, default=1, help="Select Chapter")
     parser.add_argument("-n", "--count", type=int, default=2, help="Select Count")
     parser.add_argument("-d", "--delay", type=int, default=3, help="Select Delay")
