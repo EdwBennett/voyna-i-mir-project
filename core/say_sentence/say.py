@@ -1,4 +1,14 @@
-"""Text-to-speech helper using Piper for English and Russian."""
+"""Text-to-speech helper using Piper for English and Russian.
+
+Setup:
+    uv tool install piper-tts     # installs `piper` to ~/.local/bin/piper
+    Download the .onnx + .onnx.json pair for each language in LANGUAGES below
+    from https://huggingface.co/rhasspy/piper-voices, mirroring its directory
+    structure under ~/.local/share/piper-voices/ (e.g. en/en_US/amy/medium/...).
+
+Test:
+    uv run test_say.py
+"""
 
 from __future__ import annotations
 
@@ -12,7 +22,7 @@ from pathlib import Path
 HOME = Path.home()
 PIPER_BIN = HOME / ".local/bin/piper"
 SAMPLE_RATE = 22050
-LANGUAGES: dict[str, "VoiceSpec"] = {}
+LANGUAGES: dict[str, VoiceSpec] = {}
 
 
 @dataclass(frozen=True, slots=True)
@@ -92,7 +102,7 @@ def say(*, lang: str, text: str) -> None:
     try:
         audio = synthesize(lang=lang, text=text)
         subprocess.run(play_cmd, input=audio, check=True)
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001 - CLI safety net, always report and continue rather than crash
         print(f"Error during playback: {exc}", file=sys.stderr)
 
 
@@ -119,6 +129,6 @@ if __name__ == "__main__":
 
     try:
         say(lang=args.lang, text=text_to_speak)
-    except Exception as error:
+    except Exception as error:  # noqa: BLE001 - CLI entry point, always exit cleanly rather than traceback
         print(f"Error: {error}", file=sys.stderr)
         sys.exit(1)
