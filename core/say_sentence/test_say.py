@@ -1,4 +1,4 @@
-"""Manual smoke test for say.py. Run with: uv run test_say.py"""
+"""Manual smoke test for say.py. Don't run with: uv run test_say.py"""
 
 from __future__ import annotations
 
