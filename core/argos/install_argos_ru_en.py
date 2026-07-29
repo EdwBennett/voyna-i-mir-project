@@ -1,3 +1,5 @@
+"""run this before using argos ru -> en translation"""
+
 import argostranslate.package
 import argostranslate.translate
 
