@@ -1,10 +1,12 @@
 # add_sentence.py
-from pathlib import Path
 import sys
+from pathlib import Path
 
-from sqlmodel import SQLModel, Session
+from sqlmodel import Session
+
 from db import engine, init_db
 from models import Voyna_I_Mir
+
 
 def load_chapter_file(file_path: str) -> None:
     text = Path(file_path).read_text(encoding="utf-8")
