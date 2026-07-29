@@ -5,6 +5,7 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
+    "argos>=0.4.5",
     "argostranslate>=1.11.0",
     "sqlmodel>=0.0.39",
 ]

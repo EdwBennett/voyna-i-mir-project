@@ -33,6 +33,21 @@ wheels = [
 ]
 
 [[package]]
+name = "argos"
+version = "0.4.5"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "cmlib" },
+    { name = "numpy" },
+    { name = "pgcolorbar" },
+    { name = "pyqtgraph" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/99/23/4e3ad6997d37291fd0ec755379f644d13d9f3a66dd791707483ef879b0e6/argos-0.4.5.tar.gz", hash = "sha256:3ea76066f8b8568b6b33fedacd4013cab1dd413cb6d2bf38f2ce01f54bd08059", size = 240004, upload-time = "2025-08-27T08:24:01.905Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/9a/c1/99f5d0a832fd97f1f450e3e6d885dc03a311a725199a06212dcf5ce09763/argos-0.4.5-py3-none-any.whl", hash = "sha256:2841744b123869a4a9640f8102a1f1ad45c6f1ac61f4a1615d300e1acd6264ee", size = 332890, upload-time = "2025-08-27T08:23:59.227Z" },
+]
+
+[[package]]
 name = "argostranslate"
 version = "1.11.0"
 source = { registry = "https://pypi.org/simple" }
@@ -140,6 +155,18 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/06/19/58bc6b5d7d0f81c7209b05445af477e147c486552f96665a5912211839b9/cloudpathlib-0.24.0.tar.gz", hash = "sha256:c521a984e77b47e656fe78e20a7e3e260e0ab45fc69e33ac01094227c979e34a", size = 53600, upload-time = "2026-04-30T00:54:43.265Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/c2/5b/ba933f896d9b0b07608d575a8501e2b4e32166b60d84c430a4a7285ebe64/cloudpathlib-0.24.0-py3-none-any.whl", hash = "sha256:b1c51e2d2ec7dc4fed6538991f4aea849d6cf11a7e6b9069f86e461aa1f9b5b4", size = 63214, upload-time = "2026-04-30T00:54:42.06Z" },
+]
+
+[[package]]
+name = "cmlib"
+version = "1.1.3"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "numpy" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/d6/75/4183f7f4b5f9028323dc4b20a3ffd12b0a9309d4099ee5795ab7fe5678d4/cmlib-1.1.3.tar.gz", hash = "sha256:fceda5c272893848545b0b2c9df7c378c60a909c562e50ad57c3fa06d575b5bd", size = 427942, upload-time = "2022-07-26T22:05:36.038Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/c3/98/2b3b186c6ac888c4ac6920bdd190b882f6402319609c19341100ec927c06/cmlib-1.1.3-py3-none-any.whl", hash = "sha256:055ef1d15dae567daabfc0b1a0a45ca41e4e89560ac132e8324b3cb93f727ade", size = 641373, upload-time = "2022-07-26T22:05:33.696Z" },
 ]
 
 [[package]]
@@ -736,6 +763,18 @@ wheels = [
 ]
 
 [[package]]
+name = "pgcolorbar"
+version = "1.1.3"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pyqtgraph" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/3a/d7/471b171274f45e01d5cf3b8640f734b03f36655d3ab5bff02be96474ccaf/pgcolorbar-1.1.3.zip", hash = "sha256:f7856e1e6865615db768b843ce8aea7259218143badf8ae5a54867219057da70", size = 20465, upload-time = "2023-02-06T20:18:11.896Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/d9/84/9c2351b8144a33ebdce3097a973d1182b98963992ba5f2778865f491d726/pgcolorbar-1.1.3-py3-none-any.whl", hash = "sha256:89b975a37d946d4c7d4d0fa723e676c29968b1e3e05b8a9cfe7a909e46ad458a", size = 15975, upload-time = "2023-02-06T20:18:09.982Z" },
+]
+
+[[package]]
 name = "preshed"
 version = "3.0.13"
 source = { registry = "https://pypi.org/simple" }
@@ -841,6 +880,18 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/c3/b2/bc9c9196916376152d655522fdcebac55e66de6603a76a02bca1b6414f6c/pygments-2.20.0.tar.gz", hash = "sha256:6757cd03768053ff99f3039c1a36d6c0aa0b263438fcab17520b30a303a82b5f", size = 4955991, upload-time = "2026-03-29T13:29:33.898Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/f4/7e/a72dd26f3b0f4f2bf1dd8923c85f7ceb43172af56d63c7383eb62b332364/pygments-2.20.0-py3-none-any.whl", hash = "sha256:81a9e26dd42fd28a23a2d169d86d7ac03b46e2f8b59ed4698fb4785f946d0176", size = 1231151, upload-time = "2026-03-29T13:29:30.038Z" },
+]
+
+[[package]]
+name = "pyqtgraph"
+version = "0.14.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "colorama" },
+    { name = "numpy" },
+]
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/32/36/4c242f81fdcbfa4fb62a5645f6af79191f4097a0577bd5460c24f19cc4ef/pyqtgraph-0.14.0-py3-none-any.whl", hash = "sha256:7abb7c3e17362add64f8711b474dffac5e7b0e9245abdf992e9a44119b7aa4f5", size = 1924755, upload-time = "2025-11-16T19:43:22.251Z" },
 ]
 
 [[package]]
@@ -1291,12 +1342,14 @@ name = "voyna-i-mir-project"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
+    { name = "argos" },
     { name = "argostranslate" },
     { name = "sqlmodel" },
 ]
 
 [package.metadata]
 requires-dist = [
+    { name = "argos", specifier = ">=0.4.5" },
     { name = "argostranslate", specifier = ">=1.11.0" },
     { name = "sqlmodel", specifier = ">=0.0.39" },
 ]
