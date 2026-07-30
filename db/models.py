@@ -12,6 +12,6 @@ class Voyna_I_Mir(SQLModel, table=True):
     chapter_full_name: str = Field(max_length=50)
     voyna_i_mir_russian: str = Field(max_length=1000)
     russian_transliteration: str = Field(max_length=1000)
-    russian_strophes: dict | None = Field(default=None, sa_column=Column(JSON))
+    russian_strophes: list[str] | None = Field(default=None, sa_column=Column(JSON))
     english_translation: str = Field(max_length=1000)
-    english_strophes: dict | None = Field(default=None, sa_column=Column(JSON))
+    english_strophes: list[str] | None = Field(default=None, sa_column=Column(JSON))
