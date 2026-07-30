@@ -19,4 +19,4 @@ if not already_installed:
     )
     argostranslate.package.install_from_path(package_to_install.download())
 
-print(argostranslate.translate.translate("Привет мир", from_code, to_code))
+print(argostranslate.translate.translate("первого приехавшего на ее вечер", from_code, to_code))
