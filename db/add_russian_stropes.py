@@ -30,5 +30,5 @@ def load_stropes_file(file_path: str, chapter_sequence: int) -> None:
 
 if __name__ == "__main__":
     if len(sys.argv) != 3:
-        raise SystemExit("Usage: uv run add_stropes.py <input_file> <chapter_sequence>")
+        raise SystemExit("Usage: uv run add_russian_stropes.py <input_file> <chapter_sequence>")
     load_stropes_file(sys.argv[1], int(sys.argv[2]))
